@@ -103,6 +103,12 @@ vec3 convertHSV2RGB(vec3 hsv)
 	float c = hsv.z * hsv.y;
 	return rgb * c + hsv.z - c;
 }
+
+float rgbToGray(vec3 rgb) {
+	const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+    return dot(rgb, W);
+}
+
 #endif // !defined(DRAW_MODE_silhouette) && (defined(ENABLE_color))
 
 const vec2 kCenter = vec2(0.5, 0.5);
@@ -162,19 +168,34 @@ void main()
 
 	#ifdef ENABLE_color
 	{
+		// vec3 hsv = convertRGB2HSV(gl_FragColor.xyz);
+
+		// // this code forces grayscale values to be slightly saturated
+		// // so that some slight change of hue will be visible
+		// const float minLightness = 0.11 / 2.0;
+		// const float minSaturation = 0.09;
+		// if (hsv.z < minLightness) hsv = vec3(0.0, 1.0, minLightness);
+		// else if (hsv.y < minSaturation) hsv = vec3(0.0, minSaturation, hsv.z);
+
+		// hsv.x = mod(hsv.x + u_color, 1.0);
+		// if (hsv.x < 0.0) hsv.x += 1.0;
+
+		// gl_FragColor.rgb = convertHSV2RGB(hsv);
+		
+		float gray = rgbToGray(gl_FragColor.xyz);
+		
 		vec3 hsv = convertRGB2HSV(gl_FragColor.xyz);
 
-		// this code forces grayscale values to be slightly saturated
-		// so that some slight change of hue will be visible
-		const float minLightness = 0.11 / 2.0;
-		const float minSaturation = 0.09;
-		if (hsv.z < minLightness) hsv = vec3(0.0, 1.0, minLightness);
-		else if (hsv.y < minSaturation) hsv = vec3(0.0, minSaturation, hsv.z);
-
-		hsv.x = mod(hsv.x + u_color, 1.0);
-		if (hsv.x < 0.0) hsv.x += 1.0;
-
-		gl_FragColor.rgb = convertHSV2RGB(hsv);
+		gl_FragColor.rgb = vec3(gray);    
+		
+		float hue = hsv.x;
+		float steps = 16.;
+		float steppedHue = floor(hue * steps) / steps;
+		gl_FragColor.rgb = convertHue2RGB(steppedHue);
+		
+		if (hsv.x < 0.1 || hsv.x > 0.9 || hsv.y < 0.25 || hsv.z < 0.25 || hsv.z > 0.95) {
+			gl_FragColor.rgb = vec3(gray);
+		} 
 	}
 	#endif // ENABLE_color
 
