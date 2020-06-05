@@ -134,7 +134,8 @@ class RenderWebGL extends EventEmitter {
         }
 
         /** @type {RenderWebGL.UseGpuModes} */
-        this._useGpuMode = RenderWebGL.UseGpuModes.Automatic;
+        // this._useGpuMode = RenderWebGL.UseGpuModes.Automatic;
+        this._useGpuMode = RenderWebGL.UseGpuModes.ForceGPU;
 
         /** @type {Drawable[]} */
         this._allDrawables = [];
