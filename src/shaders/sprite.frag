@@ -189,13 +189,23 @@ void main()
 		gl_FragColor.rgb = vec3(gray);    
 		
 		float hue = hsv.x;
-		float steps = 16.;
+		float saturation = hsv.y;
+		float value = hsv.z;
+
+		float steps = 8.;
 		float steppedHue = floor(hue * steps) / steps;
 		gl_FragColor.rgb = convertHue2RGB(steppedHue);
-		
-		if (hsv.x < 0.1 || hsv.x > 0.9 || hsv.y < 0.25 || hsv.z < 0.25 || hsv.z > 0.95) {
+
+		if (saturation < 0.6) {
 			gl_FragColor.rgb = vec3(gray);
-		} 
+		}
+		if (value < 0.4) {
+			gl_FragColor.rgb = vec3(gray);
+		}
+		
+		// if (hsv.x < 0.1 || hsv.x > 0.9 || hsv.y < 0.25 || hsv.z < 0.25 || hsv.z > 0.95) {
+		// 	gl_FragColor.rgb = vec3(gray);
+		// } 
 	}
 	#endif // ENABLE_color
 
