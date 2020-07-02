@@ -138,6 +138,13 @@ ShaderManager.EFFECT_INFO = {
         mask: 1 << 6,
         converter: x => 1 - (Math.max(0, Math.min(x, 100)) / 100),
         shapeChanges: false
+    },
+    /** Color segmentation for video */
+    colorSegmentation: {
+        uniformName: 'u_colors',
+        mask: 1 << 7,
+        converter: x => x,
+        shapeChanges: false
     }
 };
 

@@ -6,6 +6,9 @@ uniform vec4 u_silhouetteColor;
 # ifdef ENABLE_color
 uniform float u_color;
 # endif // ENABLE_color
+# ifdef ENABLE_colorSegmentation
+uniform float u_colors;
+# endif // ENABLE_colorSegmentation
 # ifdef ENABLE_brightness
 uniform float u_brightness;
 # endif // ENABLE_brightness
@@ -47,7 +50,7 @@ varying vec2 v_texCoord;
 // Smaller values can cause problems on some mobile devices.
 const float epsilon = 1e-3;
 
-#if !defined(DRAW_MODE_silhouette) && (defined(ENABLE_color))
+#if !defined(DRAW_MODE_silhouette) && (defined(ENABLE_colorSegmentation))
 
 // LAB COLOR STUFF
 const float eps = 216./24389.;
@@ -107,6 +110,14 @@ vec3 lab2xyz(vec3 lab){
         fz3>eps? fz3: (116.*fz-16.)/kap);
 }
 
+float rgbToGray(vec3 rgb) {
+	const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+    return dot(rgb, W);
+}
+
+#endif // #if !defined(DRAW_MODE_silhouette) && (defined(ENABLE_colorSegmentation))
+
+#if !defined(DRAW_MODE_silhouette) && (defined(ENABLE_color))
 
 // Branchless color conversions based on code from:
 // http://www.chilliant.com/rgb2hsv.html by Ian Taylor
@@ -164,12 +175,7 @@ vec3 convertHSV2RGB(vec3 hsv)
 	return rgb * c + hsv.z - c;
 }
 
-float rgbToGray(vec3 rgb) {
-	const vec3 W = vec3(0.2125, 0.7154, 0.0721);
-    return dot(rgb, W);
-}
-
-#endif // !defined(DRAW_MODE_silhouette) && (defined(ENABLE_color))
+#endif // #if !defined(DRAW_MODE_silhouette) && (defined(ENABLE_color))
 
 const vec2 kCenter = vec2(0.5, 0.5);
 
@@ -221,69 +227,43 @@ void main()
 
 	gl_FragColor = texture2D(u_skin, texcoord0);
 
-	#if defined(ENABLE_color) || defined(ENABLE_brightness)
+	#if defined(ENABLE_color) || defined(ENABLE_brightness) || defined(ENABLE_colorSegmentation)
 	// Divide premultiplied alpha values for proper color processing
 	// Add epsilon to avoid dividing by 0 for fully transparent pixels
 	gl_FragColor.rgb = clamp(gl_FragColor.rgb / (gl_FragColor.a + epsilon), 0.0, 1.0);
 
 	#ifdef ENABLE_color
 	{
-		// ORIGINAL COLOR EFFECT
-		// vec3 hsv = convertRGB2HSV(gl_FragColor.xyz);
-
-		// // this code forces grayscale values to be slightly saturated
-		// // so that some slight change of hue will be visible
-		// const float minLightness = 0.11 / 2.0;
-		// const float minSaturation = 0.09;
-		// if (hsv.z < minLightness) hsv = vec3(0.0, 1.0, minLightness);
-		// else if (hsv.y < minSaturation) hsv = vec3(0.0, minSaturation, hsv.z);
-
-		// hsv.x = mod(hsv.x + u_color, 1.0);
-		// if (hsv.x < 0.0) hsv.x += 1.0;
-
-		// gl_FragColor.rgb = convertHSV2RGB(hsv);
-		
-		// SEGMENTATION BY HSV
-		/*
-		float gray = rgbToGray(gl_FragColor.xyz);
-		
 		vec3 hsv = convertRGB2HSV(gl_FragColor.xyz);
 
-		gl_FragColor.rgb = vec3(gray);    
-		
-		float hue = hsv.x;
-		float saturation = hsv.y;
-		float value = hsv.z;
+		// this code forces grayscale values to be slightly saturated
+		// so that some slight change of hue will be visible
+		const float minLightness = 0.11 / 2.0;
+		const float minSaturation = 0.09;
+		if (hsv.z < minLightness) hsv = vec3(0.0, 1.0, minLightness);
+		else if (hsv.y < minSaturation) hsv = vec3(0.0, minSaturation, hsv.z);
 
-		float steps = 8.;
-		float steppedHue = floor(hue * steps) / steps;
-		gl_FragColor.rgb = convertHue2RGB(steppedHue);
+		hsv.x = mod(hsv.x + u_color, 1.0);
+		if (hsv.x < 0.0) hsv.x += 1.0;
 
-		if (saturation < 0.6) {
-			gl_FragColor.rgb = vec3(gray);
-		}
-		if (value < 0.4) {
-			gl_FragColor.rgb = vec3(gray);
-		}
-		*/
-
-		// LAB COLOR SEGMENTATION
-		float gray = rgbToGray(gl_FragColor.xyz);
-
-		vec3 lab = xyz2lab(rgb2xyz(gl_FragColor.xyz));
-
-		// vec3 selectedLab = xyz2lab(rgb2xyz(vec3(1.,0.,0.)));
-		vec3 selectedLab = vec3(.5, u_color, 0.);
-
-		if (distance(lab, selectedLab) < 0.5) {
-    		gl_FragColor.rgb = vec3(1.,0.,0.);
-		} else {
-			gl_FragColor.rgb = vec3(gray);
-		}
-
+		gl_FragColor.rgb = convertHSV2RGB(hsv);
 	}
 	#endif // ENABLE_color
 
+	#ifdef ENABLE_colorSegmentation
+	{
+		float gray = rgbToGray(gl_FragColor.xyz);
+
+		vec3 lab = xyz2lab(rgb2xyz(gl_FragColor.xyz));
+		
+		if (distance(lab.yz, vec2(0.1, -0.4)) < 0.2) {
+    		gl_FragColor.rgb = vec3(0.,0.5,1.);
+		} else {
+			gl_FragColor.rgb = vec3(gray);
+		}
+	}
+	#endif // ENABLE_colorSegmentation
+	
 	#ifdef ENABLE_brightness
 	gl_FragColor.rgb = clamp(gl_FragColor.rgb + vec3(u_brightness), vec3(0), vec3(1));
 	#endif // ENABLE_brightness
@@ -291,7 +271,7 @@ void main()
 	// Re-multiply color values
 	gl_FragColor.rgb *= gl_FragColor.a + epsilon;
 
-	#endif // defined(ENABLE_color) || defined(ENABLE_brightness)
+	#endif // defined(ENABLE_color) || defined(ENABLE_brightness) || defined(ENABLE_colorSegmentation)
 
 	#ifdef ENABLE_ghost
 	gl_FragColor *= u_ghost;
