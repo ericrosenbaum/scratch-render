@@ -110,6 +110,10 @@ vec3 lab2xyz(vec3 lab){
         fz3>eps? fz3: (116.*fz-16.)/kap);
 }
 
+vec3 rgb2lab(vec3 rgb) {
+	return xyz2lab(rgb2xyz(rgb));
+}
+
 float rgbToGray(vec3 rgb) {
 	const vec3 W = vec3(0.2125, 0.7154, 0.0721);
     return dot(rgb, W);
@@ -254,15 +258,13 @@ void main()
 	{
 		float gray = rgbToGray(gl_FragColor.xyz);
 
-		vec3 lab = xyz2lab(rgb2xyz(gl_FragColor.xyz));
+		vec3 lab = rgb2lab(gl_FragColor.xyz);
 
-		vec3 inputColorLab = xyz2lab(rgb2xyz(u_colors));
+		vec3 inputColorLab = rgb2lab(u_colors);
 		
 		if (distance(lab.yz, inputColorLab.yz) < 0.2) {
     		gl_FragColor.rgb = u_colors;
-		} else {
-			//gl_FragColor.rgb = vec3(gray);
-		}
+		} 
 	}
 	#endif // ENABLE_colorSegmentation
 	
