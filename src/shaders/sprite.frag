@@ -7,7 +7,7 @@ uniform vec4 u_silhouetteColor;
 uniform float u_color;
 # endif // ENABLE_color
 # ifdef ENABLE_colorSegmentation
-uniform float u_colors;
+uniform vec3 u_colors;
 # endif // ENABLE_colorSegmentation
 # ifdef ENABLE_brightness
 uniform float u_brightness;
@@ -255,11 +255,13 @@ void main()
 		float gray = rgbToGray(gl_FragColor.xyz);
 
 		vec3 lab = xyz2lab(rgb2xyz(gl_FragColor.xyz));
+
+		vec3 inputColorLab = xyz2lab(rgb2xyz(u_colors));
 		
-		if (distance(lab.yz, vec2(0.1, -0.4)) < 0.2) {
-    		gl_FragColor.rgb = vec3(0.,0.5,1.);
+		if (distance(lab.yz, inputColorLab.yz) < 0.2) {
+    		gl_FragColor.rgb = u_colors;
 		} else {
-			gl_FragColor.rgb = vec3(gray);
+			//gl_FragColor.rgb = vec3(gray);
 		}
 	}
 	#endif // ENABLE_colorSegmentation

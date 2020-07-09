@@ -143,7 +143,11 @@ ShaderManager.EFFECT_INFO = {
     colorSegmentation: {
         uniformName: 'u_colors',
         mask: 1 << 7,
-        converter: x => x,
+        converter: x => {
+            if (x.length < 3) return [0, 0, 0];
+            const normalized = [x[0] / 255, x[1] / 255, x[2] / 255];
+            return normalized;
+        },
         shapeChanges: false
     }
 };
