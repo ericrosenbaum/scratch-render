@@ -144,9 +144,8 @@ ShaderManager.EFFECT_INFO = {
         uniformName: 'u_colors',
         mask: 1 << 7,
         converter: x => {
-            if (x.length < 3) return [0, 0, 0];
-            const normalized = [x[0] / 255, x[1] / 255, x[2] / 255];
-            return normalized;
+            if (x.length < 10) return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            return x;
         },
         shapeChanges: false
     }
